@@ -1,6 +1,7 @@
 import numpy as np
 import yaml
 
+
 class geohelper:
     """
     A few assumptions:
@@ -117,7 +118,7 @@ class geohelper:
             channelid = ids[1][0]
         else:
             raise ValueError("Find multiple or no correspondence by pixel index {}".format(pxlidx))
-        print(ids[0])
+        # print(ids[0])
         return (tileid, chipid, channelid)
     
 if __name__ == '__main__':
