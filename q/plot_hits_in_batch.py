@@ -1,5 +1,8 @@
 import numpy as np
 import h5py
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import sys
@@ -7,7 +10,9 @@ import os
 
 from geohelper import geohelper
 
-def prepare_data(file2306):
+def prepare_data(file2306, itpc=1):
+    if itpc not in [1, 2]:
+        raise ValueError("io group (itpc) must be 1 or 2")
     ### all Bern module data has been uploaded to NERSC - a NERSC account is not needed to access
     ### see this link for click-downloadable files: https://portal.nersc.gov/project/dune/data/Module1/TPC12/dataRuns/packetData/
     # file2306='packet_2022_02_10_22_58_34_CET.h5'
@@ -23,7 +28,9 @@ def prepare_data(file2306):
     print(len(message_groups),' packet groups partitioned by sync packets')
     return message_groups
 
-def plot_all_events(message_groups, threshold=500, folder='temp'):
+def plot_all_events(message_groups, threshold=500, folder='temp', itpc=1):
+    if itpc not in [1, 2]:
+        raise ValueError("io group (itpc) must be 1 or 2")
     plt.close('all')
     plt.ioff()
     helper = geohelper()
@@ -73,21 +80,24 @@ def plot_all_events(message_groups, threshold=500, folder='temp'):
 
             ############
             ax3d.clear()
-            ax3d.set_title('sync_group {} counter {} threshold {}'.format(sync_group, counter, threshold))
+            ax3d.set_title('io_group {} sync_group {} counter {} threshold {}'.format(itpc, sync_group, counter, threshold))
             ax3d.scatter(timestamp, x, y, s=1)
             ax3d.set_xlabel("Timestamp [0.1 us]")
             ax3d.set_ylabel("x []", labelpad=10)
             ax3d.set_zlabel("y []")
-            fig3d.savefig('{}/syncgroup{:d}_counter{:d}_threshold{threshold}.png'.format(folder, sync_group, counter, threshold=threshold))
+            fig3d.savefig('{}/iogroup{}_syncgroup{:d}_counter{:d}_threshold{threshold}.png'.format(folder, itpc, sync_group, counter, threshold=threshold))
 
 if __name__ == '__main__':
     ### all Bern module data has been uploaded to NERSC - a NERSC account is not needed to access
     ### see this link for click-downloadable files: https://portal.nersc.gov/project/dune/data/Module1/TPC12/dataRuns/packetData/
+    itpc = 1
     if len(sys.argv) == 1:
         file2306 = 'packet_2022_02_10_22_58_34_CET.h5'
     else:
         file2306 = sys.argv[1]
-    mg = prepare_data(file2306)
+        if len(sys.argv) == 3:
+            itpc = np.uint8(sys.argv[2])
+    mg = prepare_data(file2306, itpc)
     folder = file2306.split('/')[-1].split('.')[0]
     if os.path.exists(folder):
         print("Folder {} exists".format(folder))
@@ -95,4 +105,4 @@ if __name__ == '__main__':
         os.mkdir(folder)
         print("Made directory {}".format(folder))
     print("Output are saved under {}".format(folder))
-    plot_all_events(mg, 500, folder)
+    plot_all_events(mg, 500, folder, itpc)
