@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import pchip_interpolate
 
 def load_fr_ctr(fr_file):
     fr = np.load(fr_file)
@@ -124,7 +125,7 @@ def smooth_wf(wf, thres, roi, delay, npoints=10_000, extrapolate=False):
         if not extrapolate:
             wf_new[t0:t1] = b1
     if extrapolate:
-        raise NotImplementedError("try not extrapolate")
+        # raise NotImplementedError("try not extrapolate")
         xs = np.arange(ticks[0], ticks[-1]+1, 1) if ticks[-1] < npoints else np.arange(ticks[0], npoints+1, 1)
         acc_wf_ext = pchip_interpolate(ticks, acc_wf, xs)
         wf_new[np.int_(ticks[0]) : np.int_(ticks[-1])] = np.diff(acc_wf_ext)
