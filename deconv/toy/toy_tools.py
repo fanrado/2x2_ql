@@ -130,3 +130,82 @@ def smooth_wf(wf, thres, roi, delay, npoints=10_000, extrapolate=False):
         acc_wf_ext = pchip_interpolate(ticks, acc_wf, xs)
         wf_new[np.int_(ticks[0]) : np.int_(ticks[-1])] = np.diff(acc_wf_ext)
     return wf_new
+
+def smooth_wf2(wf, thres, roi, delay, npoints=10_000, **kwargs):
+    wf_new = np.zeros(npoints)
+    dts = np.append(wf[0][0], np.diff(wf[0]))
+    seri = []
+    for i in range(len(wf[0])):
+        if i == 0:
+            if wf[0][0] > roi:
+                t0 = wf[0][0]-roi
+            else:
+                t0 = 0
+            t1 = wf[0][0]
+        else:
+            dt = wf[0][i] - wf[0][i-1]
+            print(dt)
+            t0 = wf[0][i] - dt + delay
+            t1 = wf[0][i]
+        t0 = np.int_(t0+0.002)
+        t1 = np.int_(t1+0.002)
+        t2 = np.int_(t1+delay+0.002)
+        if t2 - t0 < roi+delay:
+            seri.append([t0, t2, wf[1][i]])
+        else:
+            seri.append([t0, t1, thres])
+            seri.append([t1, t2, wf[1][i]-thres])
+    seri_array = np.array(seri)
+    # print(wf[0])
+    print(seri)
+
+    acc_wf = np.add.accumulate(seri_array[:,2])
+    acc_wf = np.append([0], acc_wf)
+    acc_wf = np.append(acc_wf, [acc_wf[-1]])
+    ticks = seri_array[:,0]
+    ticks = np.append(ticks, seri_array[-1,1])
+    ticks = np.append(ticks, seri_array[-1,1]+roi)
+    
+    for i in range(len(seri)):
+        #
+        t0, t1, v1 = seri[i]
+        b1 = v1/(t1-t0)
+        wf_new[t0:t1] = b1
+    return wf_new
+
+def smooth_wf3(wf, thres, roi, delay, npoints=10_000, **kwargs):
+    wf_new = np.zeros(npoints)
+    dts = np.append(wf[0][0], np.diff(wf[0]))
+    seri = []
+    for i in range(len(wf[0])):
+        if i == 0:
+            t0 = wf[0][0]
+            t1 = wf[0][0]
+        else:
+            dt = wf[0][i] - wf[0][i-1]
+            print(dt)
+            t0 = wf[0][i] - dt + delay
+            t1 = wf[0][i]
+        t0 = np.int_(t0+0.002)
+        t1 = np.int_(t1+0.002)
+        t2 = np.int_(t1+delay+0.002)
+
+        seri.append([t0, t2, wf[1][i]])
+
+    seri_array = np.array(seri)
+    # print(wf[0])
+    print(seri)
+
+    acc_wf = np.add.accumulate(seri_array[:,2])
+    acc_wf = np.append([0], acc_wf)
+    acc_wf = np.append(acc_wf, [acc_wf[-1]])
+    ticks = seri_array[:,0]
+    ticks = np.append(ticks, seri_array[-1,1])
+    ticks = np.append(ticks, seri_array[-1,1]+roi)
+    
+    for i in range(len(seri)):
+        #
+        t0, t1, v1 = seri[i]
+        b1 = v1/(t1-t0)
+        wf_new[t0:t1] = b1
+    return wf_new
