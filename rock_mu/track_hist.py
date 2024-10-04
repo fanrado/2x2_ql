@@ -1,5 +1,7 @@
 import numpy as np
 
+import sys
+
 import plotly.graph_objects as go
 
 import matplotlib.pyplot as plt
@@ -40,23 +42,23 @@ def compute_direction(theta_xz, theta_yz, start_point, end_point):
     # vec0 =1 - np.sum(vec0**2, axis=1)
     vec0 = np.column_stack([vec0, np.sqrt(1 - np.sum(vec0**2, axis=1))])
 
-    
+
     vec1 = end_point - start_point
     vec1norm = np.linalg.norm(vec1, axis=1)
     vec1 = vec1/vec1norm[:,np.newaxis]
-     
+
     xsign0 = np.sign(vec0[:,0])
     xsign1 = np.sign(vec1[:,0])
     ysign0 = np.sign(vec0[:,1])
     ysign1 = np.sign(vec1[:,1])
-    
+
     zsign0 = np.sign(vec0[:,2])
     zsign1 = np.sign(vec1[:,2])
-    
+
     vec0[:,2] = vec0[:,2] * zsign0 * zsign1 * xsign0 * xsign1
-    
+
     vec0 = (xsign0 * xsign1)[:, np.newaxis] * vec0
-    
+
     return vec0, vec1
 
 def compute_xy_proj(unit_vec, pref, hits, iogroup):
@@ -69,23 +71,23 @@ def compute_xy_proj(unit_vec, pref, hits, iogroup):
     z: beam
     '''
     proj_vec = np.array([0, 1, 1])
-    
+
     unit_vec_yz = unit_vec * proj_vec
     cos_yz = np.linalg.norm(unit_vec_yz)
     unit_vec_yz = unit_vec_yz/cos_yz
     unit_vecs_yz = np.array([i for i in unit_vec_yz] * hits.shape[0])
-    
+
     pref_yz = pref * proj_vec
     hits_yz = hits * proj_vec
     displace_yz = hits_yz - pref_yz
     # cross_yz = np.linalg.cross(displace_yz, unit_vec_yz)
-    
+
     cross_yz = np.cross(displace_yz, unit_vec_yz)
     dot_yz = np.dot(displace_yz, unit_vec_yz)
-    
+
     unit_vec_x = np.array([1, 0, 0])
     cross_yz_val = np.dot(cross_yz, unit_vec_x)
-    
+
     '''
     print('unit_vec', unit_vec)
     print('pref', pref)
@@ -94,7 +96,7 @@ def compute_xy_proj(unit_vec, pref, hits, iogroup):
     print('unit_vec_yz', unit_vec_yz)
     print('displace_yz0', displace_yz[0])
     print('displace_yz1', displace_yz[1])
-    
+
     print('cross_yz.shape', cross_yz.shape)
     print('dot_yz.shape', dot_yz.shape)
     print('cross_yz[0]', cross_yz[0])
@@ -106,7 +108,7 @@ def compute_xy_proj(unit_vec, pref, hits, iogroup):
     '''
     proj_x = dot_yz / cos_yz * unit_vec[0]
     dx = hits[:,0] - proj_x - pref[0]
-    
+
     sign = np.where(iogroup % 2, np.ones(hits.shape[0]), -1*np.ones(hits.shape[0]))
     dx = dx * sign
     '''
@@ -115,7 +117,7 @@ def compute_xy_proj(unit_vec, pref, hits, iogroup):
     return cross_yz_val, dot_yz, dx
 
 #f_name = '/global/cfs/cdirs/dune/users/demaross/MiniRun4_files_with_rock/MiniRun4_1E19_RHC.flow.00341.FLOW.proto_nd_flow.h5'
-f_name = 'packet-0050017-2024_07_10_09_08_04_CDT.FLOW.hdf5'
+f_name = sys.argv[1]
 packet_prefix = f_name.split('/')[-1].split('.')[0]
 f = h5flow.data.H5FlowDataManager(f_name, 'r')
 
@@ -137,51 +139,76 @@ vec0, vec1 = compute_direction(tracks["theta_xz"], tracks["theta_yz"], start_poi
 
 hyz_perp = bh.Histogram(bh.axis.Regular(50, -2.5, 2.5))
 hdx = bh.Histogram(bh.axis.Regular(80, -4, 4))
-hyz = bh.Histogram(bh.axis.Regular(50, 0, 1))
+# hyz = bh.Histogram(bh.axis.Regular(50, 0, 1))
+hyz = bh.Histogram(bh.axis.Regular(50, -1, 1))
 
-hyz_perp_trk = []
-hdx_trk = []
-hyz_trk = []
+# hyz_perp_vs_yz = bh.Histogram(bh.axis.Regular(50, 0, 1), bh.axis.Regular(50, -2.5, 2.5))
+hyz_perp_vs_yz = bh.Histogram(bh.axis.Regular(50, -1, 1), bh.axis.Regular(50, -2.5, 2.5))
+
+hyz_perp_trk = {}
+hdx_trk = {}
+hyz_trk = {}
+hyz_perp_vs_yz_trk = {}
 
 for itrk, t2h in enumerate(track2hits.data):
     # if itrk > 3:
     #     break
 
-    hyz_perp_trk.append(bh.Histogram(bh.axis.Regular(50, -2.5, 2.5)))
-    hdx_trk.append(bh.Histogram(bh.axis.Regular(80, -4, 4)))
-    hyz_trk.append(bh.Histogram(bh.axis.Regular(50, 0, 1)))
-    
+
+
     rock_muon_hits = np.array([tup for tup in t2h if not all(elem == 0 for elem in tup)], dtype = t2h.dtype)
 
     points = get_position(rock_muon_hits['x'], rock_muon_hits['y'], rock_muon_hits['z'])
+    center_of_mass = np.mean(points, axis=0)
     iogroup = rock_muon_hits['io_group']
-      
-    cross_yz, dot_yz, dx = compute_xy_proj(vec0[itrk], start_point[itrk], points, iogroup)
-    
+
+    # cross_yz, dot_yz, dx = compute_xy_proj(vec0[itrk], start_point[itrk], points, iogroup)
+    cross_yz, dot_yz, dx = compute_xy_proj(vec0[itrk], center_of_mass, points, iogroup)
+
     dot_yz_norm = dot_yz / dist[itrk]
-    
-    hyz_perp.fill(cross_yz)
-    hyz.fill(dot_yz_norm)
-    hdx.fill(dx)
-    
-    hyz_perp_trk[-1].fill(cross_yz)
-    hyz_trk[-1].fill(dot_yz_norm)
-    hdx_trk[-1].fill(dx)
+
+    if vec0[itrk][0] < 0.1:
+    # if tracks['theta_yz'][itrk] < 5:
+    # if tracks['theta_yz'][itrk] < 5:
+        hyz_perp_trk[itrk] = bh.Histogram(bh.axis.Regular(50, -2.5, 2.5))
+        hdx_trk[itrk] = bh.Histogram(bh.axis.Regular(80, -4, 4))
+        # hyz_trk.append(bh.Histogram(bh.axis.Regular(50, 0, 1)))
+        hyz_trk[itrk] = bh.Histogram(bh.axis.Regular(50, -1, 1))
+        # hyz_perp_vs_yz_trk.append(bh.Histogram(bh.axis.Regular(50, 0, 1), bh.axis.Regular(50, -2.5, 2.5)))
+        hyz_perp_vs_yz_trk[itrk] = bh.Histogram(bh.axis.Regular(50, -1, 1), bh.axis.Regular(50, -2.5, 2.5))
+
+        hyz_perp.fill(cross_yz)
+        hyz.fill(dot_yz_norm)
+        hdx.fill(dx)
+
+        hyz_perp_vs_yz.fill(dot_yz_norm, cross_yz)
+
+        hyz_perp_trk[itrk].fill(cross_yz)
+        hyz_trk[itrk].fill(dot_yz_norm)
+        hdx_trk[itrk].fill(dx)
+
+        hyz_perp_vs_yz_trk[itrk].fill(dot_yz_norm, cross_yz)
 
 # with open("hists.pkl", "wb") as f:
 #     pickle.dump(hyz_perp, f)
 
-with uproot.recreate('hists.root') as froot:
+with uproot.recreate('{}_hists.root'.format(packet_prefix)) as froot:
     froot['hyz_perp'] = hyz_perp
     froot['hyz'] = hyz
     froot['hdx'] = hdx
-    
-    for i, h in enumerate(hyz_perp_trk):
-        print('1', i)
+    froot['hyz_perp_vs_yz'] = hyz_perp_vs_yz
+
+    for i, h in hyz_perp_trk.items():
+        # print('1', i)
         froot['hyz_perp_trk{}'.format(i)] = h
-    for i, h in enumerate(hyz_trk):
-        print('2', i)
+    for i, h in hyz_trk.items():
+        # print('2', i)
         froot['hyz_trk{}'.format(i)] = h
-    for i, h in enumerate(hdx_trk):
-        print('3', i)
+    for i, h in hdx_trk.items():
+        # print('3', i)
         froot['hdx_trk{}'.format(i)] = h
+    for i, h in hyz_perp_vs_yz_trk.items():
+        # print('3', i)
+        froot['hyz_perp_vs_yz_trk{}'.format(i)] = h
+
+    print("Found", len(hyz_perp_vs_yz_trk))

@@ -1,0 +1,6 @@
+4904928 -rw-r--r-- 1 dunepr dune 5022635376 Sep  6 22:42 /global/cfs/cdirs/dune/www/data/2x2/nearline/flowed_charge/REFLOW/v5/beam/july8_2024/nominal_hv/packet-0050017-2024_07_08_15_23_37_CDT.FLOW.hdf5
+ 418848 -rw-r--r-- 1 dunepr dune  428898016 Sep  6 22:27 /global/cfs/cdirs/dune/www/data/2x2/nearline/flowed_charge/REFLOW/v5/beam/july8_2024/nominal_hv/packet-0050017-2024_07_08_15_43_39_CDT.FLOW.hdf5
+1434688 -rw-r--r-- 1 dunepr dune 1469115080 Sep  6 22:26 /global/cfs/cdirs/dune/www/data/2x2/nearline/flowed_charge/REFLOW/v5/beam/july8_2024/nominal_hv/packet-0050017-2024_07_08_15_33_38_CDT.FLOW.hdf5
+3402560 -rw-r--r-- 1 dunepr dune 3484210360 Sep  6 22:24 /global/cfs/cdirs/dune/www/data/2x2/nearline/flowed_charge/REFLOW/v5/beam/july8_2024/nominal_hv/packet-0050017-2024_07_08_15_13_35_CDT.FLOW.hdf5
+ 655104 -rw-r--r-- 1 dunepr dune  670824424 Sep  6 22:19 /global/cfs/cdirs/dune/www/data/2x2/nearline/flowed_charge/REFLOW/v5/beam/july8_2024/nominal_hv/packet-0050017-2024_07_08_15_03_34_CDT.FLOW.hdf5
+ 664304 -rw-r--r-- 1 dunepr dune  680234384 Sep  6 22:16 /global/cfs/cdirs/dune/www/data/2x2/nearline/flowed_charge/REFLOW/v5/beam/july8_2024/nominal_hv/packet-0050017-2024_07_08_15_53_40_CDT.FLOW.hdf5

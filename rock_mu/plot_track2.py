@@ -18,6 +18,8 @@ import numpy as np
 
 import os
 
+import ROOT
+
 
 if not os.path.exists("images"):
     os.mkdir("images")
@@ -65,6 +67,16 @@ def compute_direction(theta_xz, theta_yz, start_point, end_point):
 # f_name = 'packet-0050017-2024_07_10_09_08_04_CDT.FLOW.hdf5'
 f_name = sys.argv[1]
 packet_prefix = f_name.split('/')[-1].split('.')[0]
+# check things
+valid_indices = []
+froot = ROOT.TFile('{}_hists.root'.format(packet_prefix))
+for i in range(5000):
+    h = froot.Get('hyz_trk{}'.format(i))
+    if isinstance(h, ROOT.TH1):
+        valid_indices.append(i)
+        print(i)
+print(valid_indices)
+
 f = h5flow.data.H5FlowDataManager(f_name, 'r')
 
 track2hits = dereference(
@@ -83,13 +95,16 @@ end_point = get_position(tracks['x_end'], tracks['y_end'], tracks['z_end'])
 vec0, vec1 = compute_direction(tracks["theta_xz"], tracks["theta_yz"], start_point, end_point)
 
 for itrk, t2h in enumerate(track2hits.data):
-    if itrk > 3:
-        break
 
     rock_muon_hits = np.array([tup for tup in t2h if not all(elem == 0 for elem in tup)], dtype = t2h.dtype)
 
-    # fig = go.Figure()
-    fig = make_subplots(rows=2, cols=2)
+    if not itrk in valid_indices:
+        continue
+    else:
+        print(itrk)
+
+    fig = go.Figure()
+    # fig = make_subplots(rows=2, cols=2)
     PHits_traces = go.Scatter3d(
         #x= rock_muon_hits['x'].flatten(), y= rock_muon_hits['y'].flatten(), z= rock_muon_hits['z'].flatten(),
         x= rock_muon_hits['x'], y= rock_muon_hits['y'], z= rock_muon_hits['z'],
@@ -101,24 +116,34 @@ for itrk, t2h in enumerate(track2hits.data):
         # visible='legendonly',
         showlegend=True,
         opacity=0.7,
-        name='prompt hits'
+        name='prompt hits',
     )
-    fig.add_traces(PHits_traces,
-                   row=1, col=1
-                   )
+    # fig.append_trace(PHits_traces,
+    #                row=1, col=1
+    #                )
 
+    fig.add_trace(PHits_traces)
     # add a line
     track = go.Scatter3d(x = [tracks['x_start'][itrk], tracks['x_end'][itrk]],
                        y = [tracks['y_start'][itrk], tracks['y_end'][itrk]],
                        z = [tracks['z_start'][itrk], tracks['z_end'][itrk]],
                         mode='lines', name='start to end')
-    fig.add_traces(track,
-                   row=1, col=1
-                   )
+    # fig.append_trace(track,
+    #                row=1, col=1
+    #                )
+    fig.add_trace(track)
 
+
+    fig.update_layout(
+        scene = dict(
+            xaxis = dict(nticks=4, range=[-80, 80],),
+            yaxis = dict(nticks=4, range=[-70, 70],),
+            zaxis = dict(nticks=4, range=[-80, 80],),),
+        width=700,
+        margin=dict(r=20, l=10, b=10, t=10))
 
     # second pannel
 
     # fig.show()
 
-    fig.write_image("images/{}_track{}.png".format(packet_prefix, itrk))
+    fig.write_image("images/{}_trk{}.png".format(packet_prefix, itrk))
